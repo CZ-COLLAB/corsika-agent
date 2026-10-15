@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "corsika-agent"
+version = "1.0.0"
+description = "Pure OpenCode + CORSIKA 7 skill prompts + web chat UI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "CORSIKA Agent contributors" }]
+dependencies = []
+
+[project.optional-dependencies]
+web = ["fastapi", "uvicorn", "python-multipart"]
+dev = ["pytest"]
+
+[project.scripts]
+corsika-agent = "corsika_agent.webapp:main"
+corsika-agent-web = "corsika_agent.webapp:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+corsika_agent = [
+  "web/*.html",
+  "web/vendor/*",
+  "prompts/**/*.md",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

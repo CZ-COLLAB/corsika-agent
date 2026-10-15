@@ -1,0 +1,41 @@
+CORSIKA 7 Mars Atmosphere Modification Log
+===========================================
+Date: 2026-07-08
+Reference: ICRC 2021 "Hadron cascades in CORSIKA 8" (two-layer NASA model)
+NASA model: https://www.grc.nasa.gov/www/k-12/airplane/atmosmrm.html
+
+Summary of changes:
+- Replaced Earth US Standard atmosphere with Mars 5-layer exponential fit
+- Replaced Earth radius (6371 km) with Mars radius (3389.5 km)
+- Composition kept as N2/O2 (see note below)
+
+1. src/corsika.F
+   - Line 6373-6375: AATM/BATM/CATM defaults -> Mars values
+   - Line 6379: AATM0(J=1) model 1 stored data -> Mars values
+   - Line 6438: BATM0(J=1) model 1 stored data -> Mars values
+   - Line 6484: CATM0(J=1) model 1 stored data -> Mars values
+   - Line 6534: HLAY default layer boundaries -> Mars values
+   - Line 6537: HLAY0(J=1) model 1 stored data -> Mars values
+   - Line 6608: C(1) Earth radius 6371315.D2 -> 3389500.D2
+
+2. coast/CorsikaIntern/CorsikaConsts.h
+   - Line 64: cRearth 6371315.00*m -> 3389500.00*m
+
+3. src/parallel/acreinpfh1.f
+   - Lines 28-30: aatm/batm/catm -> Mars values
+
+Mars atmosphere 5-layer parameters:
+  HLAY(1-5) =  0,  1.5e6,  6.0e6,  1.0e7,  1.2e7  cm
+              (0,  15,     60,     100,    120    km)
+  AATM(1-5) =  0,  0,      0,      0,      0.006
+  BATM(1-5) =  18.84,  16.82,  204.9,  204.9,  1.0
+  CATM(1-5) =  1.1e6,  1.2e6,  8e5,    8e5,    2.0e9  cm
+              (11,     12,     8,      8,      20000  km scale height)
+  Total column: ~18.8 g/cm2 (~2% of Earth)
+  Top of atmosphere: ~120 km
+
+CO2 composition note:
+  CORSIKA 7 has no slot for carbon in COMPOS(3) array (N/O/Ar only).
+  As in the ICRC 2021 paper, composition is kept as 78% N2 + 22% O2.
+  This does not significantly affect results (see paper Sec. 4.1).
+  AVERAW and COMPOS left unchanged.

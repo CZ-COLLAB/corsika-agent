@@ -1,0 +1,22 @@
+# Large outputs and build artifacts
+out_*/
+logs/
+scratch/
+*.root
+*.DAT
+*.dat
+*.tar.gz
+*.tar
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

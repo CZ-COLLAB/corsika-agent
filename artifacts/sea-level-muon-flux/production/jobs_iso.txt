@@ -1,0 +1,22 @@
+# E_gev  runnr  seed  nshow  card
+10	8000	900000	50000	cards/card_iso_E00.inp
+15.8489	8001	900001	50000	cards/card_iso_E01.inp
+25.1189	8002	900002	50000	cards/card_iso_E02.inp
+39.8107	8003	900003	50000	cards/card_iso_E03.inp
+63.0957	8004	900004	50000	cards/card_iso_E04.inp
+100	8005	900005	15000	cards/card_iso_E05.inp
+158.489	8006	900006	15000	cards/card_iso_E06.inp
+251.189	8007	900007	15000	cards/card_iso_E07.inp
+398.107	8008	900008	15000	cards/card_iso_E08.inp
+630.957	8009	900009	15000	cards/card_iso_E09.inp
+1000	8010	900010	5000	cards/card_iso_E10.inp
+1584.89	8011	900011	5000	cards/card_iso_E11.inp
+2511.89	8012	900012	5000	cards/card_iso_E12.inp
+3981.07	8013	900013	5000	cards/card_iso_E13.inp
+6309.57	8014	900014	5000	cards/card_iso_E14.inp
+10000	8015	900015	300	cards/card_iso_E15.inp
+15848.9	8016	900016	300	cards/card_iso_E16.inp
+25118.9	8017	900017	300	cards/card_iso_E17.inp
+39810.7	8018	900018	300	cards/card_iso_E18.inp
+63095.7	8019	900019	300	cards/card_iso_E19.inp
+100000	8020	900020	300	cards/card_iso_E20.inp

@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CORSIKA Agent</title>
+  <link rel="stylesheet" href="/vendor/katex.min.css">
+  <style>
+    :root {
+      --bg:#f4f6f9; --panel:#fff; --panel-2:#f8fafc; --line:#dfe4eb; --line-2:#edf0f4;
+      --text:#172033; --muted:#667085; --blue:#1769e0; --blue-2:#eaf2ff; --green:#0c8b62;
+      --green-2:#e7f7f1; --amber:#a66400; --amber-2:#fff5df; --red:#c23a45; --code:#111827;
+      --shadow:0 8px 28px rgba(26,39,63,.07); --radius:12px;
+    }
+    * { box-sizing:border-box; }
+    html,body { height:100%; }
+    body { margin:0; color:var(--text); background:var(--bg); font:13px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    button:disabled { cursor:not-allowed; opacity:.5; }
+    .app { min-height:100%; display:flex; flex-direction:column; }
+    header { height:58px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 20px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.95); }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:750; letter-spacing:-.02em; }
+    .mark { width:30px; height:30px; display:grid; place-items:center; border-radius:9px; color:white; background:var(--blue); font-family:Georgia,serif; font-size:18px; }
+    .runtime { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:11px; }
+    .dot { width:7px; height:7px; border-radius:50%; background:#a5adba; }
+    .dot.ok { background:var(--green); box-shadow:0 0 0 3px var(--green-2); }
+    #view-workspace { flex:1; min-height:0; display:flex; }
+    .btn { min-height:34px; padding:7px 12px; border:1px solid var(--line); border-radius:8px; color:var(--text); background:white; font-weight:650; font-size:11px; }
+    .btn:hover:not(:disabled) { border-color:#b9c3d0; background:#fbfcfe; }
+    .btn.primary { color:white; border-color:var(--blue); background:var(--blue); }
+    .btn.primary:hover:not(:disabled) { background:#115bc3; }
+    .btn.danger { color:var(--red); }
+    .icon-btn { width:32px; height:32px; padding:0; display:grid; place-items:center; border:1px solid var(--line); border-radius:8px; color:var(--muted); background:white; }
+    .muted { color:var(--muted); }
+    .empty { padding:35px 20px; color:var(--muted); text-align:center; font-size:11px; }
+    .hidden { display:none !important; }
+    .session-rail { width:220px; flex:none; display:flex; flex-direction:column; border-right:1px solid var(--line); background:#f8fafc; }
+    .rail-head { display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--line); }
+    .rail-head strong { font-size:11px; text-transform:uppercase; letter-spacing:.07em; }
+    .session-list { flex:1; overflow:auto; padding:7px; }
+    .session-entry { width:100%; display:flex; align-items:center; margin-bottom:4px; border:1px solid transparent; border-radius:8px; background:transparent; }
+    .session-entry:hover { background:white; }
+    .session-entry.active { border-color:#bed2ef; background:var(--blue-2); }
+    .session-item { min-width:0; flex:1; display:block; padding:10px 5px 10px 10px; border:0; color:var(--text); background:transparent; text-align:left; }
+    .session-item strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; }
+    .session-item span { display:block; margin-top:4px; color:var(--muted); font-size:8px; }
+    .session-tools { flex:none; display:flex; gap:1px; padding-right:4px; opacity:.2; }
+    .session-entry:hover .session-tools,.session-entry.active .session-tools { opacity:1; }
+    .row-action { width:25px; height:25px; padding:0; border:0; border-radius:6px; color:var(--muted); background:transparent; font-size:11px; }
+    .row-action:hover { color:var(--text); background:#e8edf4; }
+    .row-action.danger:hover { color:var(--red); background:#fff0f1; }
+    .workspace-empty { flex:1; display:grid; place-items:center; color:var(--muted); }
+    .workbench { flex:1; min-width:0; display:none; grid-template-columns:minmax(360px,46%) minmax(420px,54%); }
+    .workbench.active { display:grid; }
+    .ide { min-width:0; display:grid; grid-template-columns:190px minmax(0,1fr); border-right:1px solid var(--line); background:white; }
+    .explorer { min-width:0; display:flex; flex-direction:column; border-right:1px solid var(--line); background:#f8fafc; }
+    .panel-head { height:45px; flex:none; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 11px; border-bottom:1px solid var(--line); }
+    .panel-head strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; text-transform:uppercase; letter-spacing:.06em; }
+    .panel-actions { display:flex; gap:5px; }
+    .file-tree { flex:1; overflow:auto; padding:7px 4px; }
+    .file-row { width:100%; height:27px; display:flex; align-items:center; gap:6px; padding:0 7px; border:0; border-radius:5px; color:#364052; background:transparent; text-align:left; font:9px ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .file-row:hover,.file-row.active { background:#e9eef5; }
+    .file-row .file-icon { flex:none; color:#8792a2; }
+    .file-row span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .editor { min-width:0; display:flex; flex-direction:column; background:white; }
+    .editor-path { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font:9px ui-monospace,SFMono-Regular,Menlo,monospace; }
+    #editor-content { flex:1; width:100%; min-height:0; resize:none; padding:16px; border:0; outline:0; color:#222b3a; background:#fff; font:11px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2; }
+    .editor-empty { flex:1; display:grid; place-items:center; color:var(--muted); font-size:10px; }
+    .chat-pane { min-width:0; display:flex; flex-direction:column; background:white; }
+    .chat-head { height:45px; flex:none; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 13px; border-bottom:1px solid var(--line); }
+    .chat-title { min-width:0; }
+    .chat-title strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; }
+    .chat-title span { display:block; color:var(--muted); font-size:8px; }
+    .chat-actions { display:flex; gap:6px; }
+    .messages { flex:1; min-height:0; overflow:auto; padding:17px 17px 8px; background:#fbfcfe; }
+    .message { max-width:88%; margin:0 0 11px; padding:10px 12px; border:1px solid var(--line); border-radius:11px 11px 11px 3px; background:white; font-size:11px; line-height:1.6; overflow-wrap:anywhere; }
+    .message.user { margin-left:auto; border-color:#bfd4f4; border-radius:11px 11px 3px 11px; background:var(--blue-2); }
+    .message.tool { max-width:96%; color:#536078; border-style:dashed; background:#f2f5f8; white-space:pre-wrap; font:9px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .message.system { max-width:96%; color:#536078; border-style:dashed; background:#fff8e8; }
+    .message.compact { padding:8px 11px; }
+    .message.compact details>summary { cursor:pointer; color:#34425a; font-weight:700; }
+    .message.compact .compact-content { margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+    .trace-group { max-width:96%; margin:0 0 11px; border:1px dashed #ccd5e2; border-radius:9px; color:#657086; background:#f6f8fb; font-size:9px; }
+    .trace-group>summary { padding:7px 10px; cursor:pointer; list-style:none; font-weight:700; }
+    .trace-group>summary::-webkit-details-marker { display:none; }
+    .trace-group>summary::before { content:"›"; display:inline-block; margin-right:7px; transition:transform .15s ease; }
+    .trace-group[open]>summary::before { transform:rotate(90deg); }
+    .trace-list { padding:0 8px 8px; border-top:1px solid #dce2eb; }
+    .trace-item { padding:7px 3px; border-bottom:1px solid #e2e7ef; overflow:hidden; color:var(--muted); text-overflow:ellipsis; white-space:nowrap; font:9px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .trace-item:last-child { border-bottom:0; }
+    .message-label { display:block; margin-bottom:5px; color:var(--muted); font-size:7px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+    .message p { margin:0 0 8px; }
+    .message p:last-child { margin-bottom:0; }
+    .message h1,.message h2,.message h3 { margin:12px 0 6px; line-height:1.3; }
+    .message h1 { font-size:16px; } .message h2 { font-size:14px; } .message h3 { font-size:12px; }
+    .message ul,.message ol { margin:7px 0; padding-left:20px; }
+    .message code { padding:1px 4px; border-radius:4px; background:#edf1f6; font:9px ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .message pre { padding:10px; overflow:auto; border-radius:7px; color:#e8edf5; background:var(--code); }
+    .message pre code { padding:0; color:inherit; background:transparent; }
+    .message table { display:block; max-width:100%; overflow:auto; border-collapse:collapse; }
+    .message th,.message td { padding:5px 7px; border:1px solid var(--line); }
+    .message .katex-display { overflow:auto hidden; }
+    .thinking { padding:8px 12px; color:var(--blue); font-size:9px; }
+    .chat-error { margin:0 12px 8px; padding:9px 11px; border:1px solid color-mix(in srgb,var(--red) 35%,transparent); border-radius:8px; background:color-mix(in srgb,var(--red) 8%,transparent); color:var(--red); font-size:10px; white-space:pre-wrap; }
+    .composer { flex:none; padding:10px; border-top:1px solid var(--line); background:white; }
+    #chat-input { width:100%; min-height:64px; max-height:180px; resize:vertical; padding:9px 10px; border:1px solid var(--line); border-radius:9px; outline:0; font-size:11px; }
+    #chat-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(23,105,224,.1); }
+    .composer-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:7px; }
+    .composer-row span { color:var(--muted); font-size:8px; }
+
+    dialog { width:min(470px,calc(100vw - 30px)); padding:0; border:1px solid var(--line); border-radius:14px; box-shadow:0 24px 90px rgba(12,24,44,.25); }
+    dialog::backdrop { background:rgba(18,27,43,.36); backdrop-filter:blur(2px); }
+    .dialog-head { padding:17px 19px; border-bottom:1px solid var(--line); }
+    .dialog-head h2 { margin:0; font-size:15px; }
+    .dialog-body { display:grid; gap:13px; padding:18px 19px; }
+    .field label { display:block; margin-bottom:5px; color:var(--muted); font-size:9px; font-weight:700; }
+    .field input,.field select { width:100%; height:38px; padding:0 10px; border:1px solid var(--line); border-radius:8px; background:white; }
+    .dialog-actions { display:flex; justify-content:flex-end; gap:8px; padding:12px 19px; border-top:1px solid var(--line); }
+
+    @media (max-width:1050px) {
+      .session-rail { width:180px; }
+      .workbench.active { grid-template-columns:minmax(320px,43%) minmax(400px,57%); }
+      .ide { grid-template-columns:150px minmax(0,1fr); }
+    }
+    @media (max-width:800px) {
+      .session-rail { width:150px; }
+      .workbench.active { display:flex; flex-direction:column; }
+      .ide { min-height:430px; border-right:0; border-bottom:1px solid var(--line); }
+      .chat-pane { min-height:620px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><div class="mark">μ</div><span>CORSIKA Agent</span></div>
+    <div class="runtime"><span class="dot" id="runtime-dot"></span><span id="runtime-label">Checking OpenCode…</span></div>
+  </header>
+
+  <section id="view-workspace">
+    <aside class="session-rail">
+      <div class="rail-head"><strong>Chat History</strong><button class="icon-btn" id="new-session" title="New Chat">＋</button></div>
+      <div class="session-list" id="session-list"></div>
+    </aside>
+    <div class="workspace-empty" id="workspace-empty"><div><strong>Create or select a Chat Session</strong><br><span style="font-size:10px">Each session has its own workspace folder</span></div></div>
+    <div class="workbench" id="workbench">
+      <section class="ide">
+        <aside class="explorer">
+          <div class="panel-head"><strong>Explorer</strong><div class="panel-actions"><button class="icon-btn" id="upload-workspace-file" title="Upload files">↑</button><button class="icon-btn" id="refresh-files" title="Refresh">↻</button></div></div>
+          <input id="workspace-file" type="file" multiple>
+          <div class="file-tree" id="file-tree"></div>
+        </aside>
+        <div class="editor">
+          <div class="panel-head"><span class="editor-path" id="editor-path">No file open</span><button class="btn" id="save-file" disabled>Save</button></div>
+          <div class="editor-empty" id="editor-empty">Select a text file on the left</div>
+          <textarea id="editor-content" class="hidden" spellcheck="false"></textarea>
+        </div>
+      </section>
+      <section class="chat-pane">
+        <div class="chat-head">
+          <div class="chat-title"><strong id="chat-title">Chat</strong><span id="chat-subtitle">OpenCode · CORSIKA Agent</span></div>
+          <div class="chat-actions"><button class="btn danger" id="stop-agent" disabled>Stop Agent</button></div>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="thinking hidden" id="thinking">OpenCode is working…</div>
+        <div class="chat-error hidden" id="chat-error"></div>
+        <div class="composer">
+          <textarea id="chat-input" placeholder="Send a message to OpenCode…"></textarea>
+          <div class="composer-row"><span>Enter to send · Shift+Enter for newline</span><button class="btn primary" id="send-chat" disabled>Send</button></div>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
+
+<dialog id="session-dialog">
+  <form method="dialog" id="session-form">
+    <div class="dialog-head"><h2>New Chat Session</h2></div>
+    <div class="dialog-body">
+      <div class="field"><label>Name (optional)</label><input id="new-title" maxlength="120" placeholder="Auto-named"></div>
+      <div class="field"><label>Model</label><select id="new-model"></select></div>
+      <p style="margin:0;color:var(--muted);font-size:9px">Each session has its own CORSIKA workspace; OpenCode starts only when the first message is sent.</p>
+    </div>
+    <div class="dialog-actions"><button class="btn" value="cancel">Cancel</button><button class="btn primary" id="create-session" value="default">Create</button></div>
+  </form>
+</dialog>
+
+<script src="/vendor/marked.umd.js"></script>
+<script src="/vendor/purify.min.js"></script>
+<script src="/vendor/katex.min.js"></script>
+<script src="/vendor/marked-katex-extension.umd.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const state = { sessions:[], session:null, sessionId:null, openFile:null, timer:null, openTraceGroups:{} };
+
+  if (window.marked && window.markedKatex) {
+    marked.use(markedKatex({throwOnError:false,nonStandard:true}));
+    marked.setOptions({gfm:true,breaks:true});
+  }
+  function markdown(value) {
+    if (!window.marked || !window.DOMPurify) return escapeHtml(value);
+    return DOMPurify.sanitize(marked.parse(value || ""), {USE_PROFILES:{html:true}});
+  }
+  function escapeHtml(value) { const div=document.createElement("div"); div.textContent=value ?? ""; return div.innerHTML; }
+  async function api(path, options={}) {
+    const response=await fetch(path,options); const type=response.headers.get("content-type")||"";
+    const data=type.includes("json") ? await response.json() : await response.text();
+    if (!response.ok) throw new Error((data&&data.detail)||data||`HTTP ${response.status}`);
+    return data;
+  }
+  function opt(select,value,label) { const node=document.createElement("option"); node.value=value; node.textContent=label; select.append(node); }
+
+  async function initialize() {
+    try {
+      const [status,workspaces]=await Promise.all([api("/api/status"),api("/api/workspaces")]);
+      state.sessions=workspaces.sessions||[];
+      const runtime=workspaces.runtime||status.runtime||{};
+      $("runtime-dot").classList.toggle("ok",!!runtime.available);
+      $("runtime-label").textContent=runtime.available ? `OpenCode ${runtime.version||"ready"}` : "OpenCode not installed";
+      const modelSelect=$("new-model"); modelSelect.replaceChildren();
+      Object.entries(workspaces.models||status.model_backends||{}).forEach(([id,label])=>opt(modelSelect,id,label));
+      modelSelect.value="deepseek-v4-flash";
+      renderSessionList();
+      if (state.sessions.length) openSession(state.sessions[0].session_id);
+    } catch (error) { $("runtime-label").textContent=error.message; }
+  }
+
+  $("new-session").addEventListener("click",()=>{$("new-title").value="";$("session-dialog").showModal()});
+  $("session-form").addEventListener("submit",async event=>{
+    if (event.submitter?.value==="cancel") return; event.preventDefault(); const button=$("create-session"); button.disabled=true;
+    try {
+      const body={title:$("new-title").value,model:$("new-model").value};
+      const session=await api("/api/workspaces",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      $("session-dialog").close(); state.sessions.unshift(session); renderSessionList(); await openSession(session.session_id);
+    } catch(error){alert(error.message)} finally {button.disabled=false}
+  });
+  function renderSessionList() {
+    const root=$("session-list"); root.replaceChildren();
+    if (!state.sessions.length) {root.innerHTML='<div class="empty">Click ＋ to create one</div>';return}
+    state.sessions.forEach(session=>{
+      const entry=document.createElement("div"); entry.className=`session-entry ${session.session_id===state.sessionId?"active":""}`;
+      const button=document.createElement("button"); button.className="session-item";
+      const sessionStatus={idle:"Idle",queued:"Queued",running:"Running",stopping:"Stopping",error:"Error"}[session.status]||session.status||"Idle";
+      const conversationCount=session.conversation_count??session.message_count??0;
+      button.innerHTML=`<strong>${escapeHtml(session.title||session.session_id)}</strong><span>${conversationCount} messages · ${escapeHtml(sessionStatus)}<br>${escapeHtml(formatHistoryTime(session.updated_at||session.created_at))}</span>`;
+      button.onclick=()=>openSession(session.session_id);
+      const tools=document.createElement("div"); tools.className="session-tools";
+      const rename=document.createElement("button"); rename.className="row-action"; rename.title="Rename Chat"; rename.textContent="✎"; rename.onclick=()=>renameSession(session);
+      const remove=document.createElement("button"); remove.className="row-action danger"; remove.title="Delete Chat"; remove.textContent="×"; remove.disabled=["queued","running","stopping"].includes(session.status); remove.onclick=()=>deleteSession(session);
+      tools.append(rename,remove); entry.append(button,tools); root.append(entry);
+    });
+  }
+  function formatHistoryTime(value) { if(!value)return "saved"; const date=new Date(value); return Number.isNaN(date.valueOf())?"saved":new Intl.DateTimeFormat("en-GB",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(date); }
+  async function renameSession(session) {
+    const title=prompt("New Chat name",session.title||""); if(title===null)return;
+    try { const updated=await api(`/api/workspaces/${session.session_id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({title})}); mergeSession(updated); if(state.sessionId===session.session_id)state.session=updated; renderSessionList(); if(state.sessionId===session.session_id)renderSession(); }
+    catch(error){alert(error.message)}
+  }
+  async function deleteSession(session) {
+    if(!confirm(`Remove "${session.title||session.session_id}" from Chat history?`))return;
+    try { await api(`/api/workspaces/${session.session_id}`,{method:"DELETE"}); state.sessions=state.sessions.filter(item=>item.session_id!==session.session_id); if(state.sessionId===session.session_id){clearTimeout(state.timer);state.session=null;state.sessionId=null;state.openFile=null;$("workbench").classList.remove("active");$("workspace-empty").classList.remove("hidden");if(state.sessions.length)await openSession(state.sessions[0].session_id);else renderSessionList()}else renderSessionList(); }
+    catch(error){alert(error.message)}
+  }
+  async function openSession(id) {
+    clearTimeout(state.timer); state.sessionId=id; state.openFile=null; $("editor-content").classList.add("hidden"); $("editor-empty").classList.remove("hidden"); $("save-file").disabled=true;
+    try { state.session=await api(`/api/workspaces/${id}`); mergeSession(state.session); $("workspace-empty").classList.add("hidden"); $("workbench").classList.add("active"); renderSession(); await refreshFiles(); pollSession(); }
+    catch(error){alert(error.message)}
+  }
+  function mergeSession(session) {
+    const index=state.sessions.findIndex(s=>s.session_id===session.session_id); if(index>=0)state.sessions[index]={...state.sessions[index],...session};else state.sessions.unshift(session);
+  }
+  function renderSession() {
+    const session=state.session; if(!session)return; mergeSession(session); renderSessionList();
+    $("chat-title").textContent=session.title||session.session_id; $("chat-subtitle").textContent=`OpenCode · ${session.model} · CORSIKA Agent`;
+    const busy=["queued","running","stopping"].includes(session.status); $("thinking").classList.toggle("hidden",!busy); $("thinking").textContent=session.status==="stopping"?"Stopping Agent…":"OpenCode is working…"; $("send-chat").disabled=busy; $("chat-input").disabled=busy;
+    $("stop-agent").disabled=!(["queued","running"].includes(session.status));
+    $("chat-input").placeholder=!session.message_count?"Send the first message to start OpenCode…":"Continue chatting with OpenCode…";
+    const visibleError=session.error||""; $("chat-error").textContent=visibleError; $("chat-error").classList.toggle("hidden",!visibleError);
+    renderMessages(session.messages||[],session);
+  }
+  function renderMessages(messages,session) {
+    const root=$("messages"), nearBottom=root.scrollHeight-root.scrollTop-root.clientHeight<100; root.replaceChildren();
+    if(!messages.length){root.innerHTML='<div class="empty">This is a blank session. OpenCode starts only after the first message is sent.</div>';return}
+    const sessionKey=String(session?.session_id||state.sessionId||"");
+    const openTraces=state.openTraceGroups[sessionKey]||(state.openTraceGroups[sessionKey]=new Set());
+    const appendDialogue=item=>{
+      const node=document.createElement("div");node.className=`message ${item.role}`;
+      const label=document.createElement("span");label.className="message-label";label.textContent=item.role==="assistant"?"OpenCode":item.role;node.append(label);
+      const content=document.createElement("div");content.innerHTML=markdown(item.content||"");node.append(content);
+      root.append(node);
+    };
+    const toolLabels={bash:"Run command",read:"Read",write:"Write file",edit:"Edit file",glob:"Find files",grep:"Search",todowrite:"Update plan",task:"Call task"};
+    const summarizeTool=item=>{
+      const lines=(item.content||"").split("\n").map(line=>line.trim()).filter(Boolean);
+      const kind=(item.kind||lines[0]?.split("·")[0]||"tool").trim().toLowerCase();
+      const action=toolLabels[kind]||`Call ${kind}`;
+      const target=(lines[1]||"").replace(/\/.*workspaces\/studio\/chats\/[^/\s]+\/workspace/g,"workspace");
+      const label=[action,target].filter(Boolean).join(" · ");
+      return label.length>140?`${label.slice(0,137)}…`:label;
+    };
+    const appendTrace=items=>{
+      const traceKey=String(items[0]?.id||items[0]?.at||summarizeTool(items[0]));
+      const group=document.createElement("details");group.className="trace-group";group.dataset.traceKey=traceKey;group.open=openTraces.has(traceKey);group.addEventListener("toggle",()=>{if(group.open)openTraces.add(traceKey);else openTraces.delete(traceKey)});const summary=document.createElement("summary");summary.textContent=`Run details · ${items.length} operations`;const list=document.createElement("div");list.className="trace-list";
+      items.forEach(item=>{const line=document.createElement("div");line.className="trace-item";line.textContent=summarizeTool(item);line.title=line.textContent;list.append(line)});
+      group.append(summary,list);root.append(group);
+    };
+    for(let index=0;index<messages.length;){if(messages[index].role==="tool"){const tools=[];while(index<messages.length&&messages[index].role==="tool")tools.push(messages[index++]);appendTrace(tools)}else appendDialogue(messages[index++])}
+    if(nearBottom||true)root.scrollTop=root.scrollHeight;
+  }
+  async function pollSession() {
+    clearTimeout(state.timer); if(!state.sessionId)return; const id=state.sessionId;
+    try { const session=await api(`/api/workspaces/${id}`); if(id!==state.sessionId)return; const before=state.session?.status; state.session=session; renderSession(); if(before==="running"&&session.status!=="running")await refreshFiles(); }
+    catch(error){}
+    state.timer=setTimeout(pollSession,(["queued","running","stopping"].includes(state.session?.status))?900:2500);
+  }
+  $("chat-input").addEventListener("input",()=>{$("send-chat").disabled=["queued","running","stopping"].includes(state.session?.status)||!$("chat-input").value.trim()});
+  $("chat-input").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(!$("send-chat").disabled)sendChat()}});
+  $("send-chat").addEventListener("click",sendChat);
+  async function sendChat() {
+    const message=$("chat-input").value.trim();if(!message||!state.sessionId)return;$("chat-input").value="";$("send-chat").disabled=true;
+    try {state.session=await api(`/api/workspaces/${state.sessionId}/chat`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message})});renderSession();pollSession()}
+    catch(error){alert(error.message)}
+  }
+  $("stop-agent").addEventListener("click",async()=>{if(!state.sessionId||!confirm("Stop the current Agent turn?\n\nThe conversation history and workspace files produced so far are preserved; you can continue chatting afterwards."))return;try{$("stop-agent").disabled=true;state.session=await api(`/api/workspaces/${state.sessionId}/stop`,{method:"POST"});renderSession();pollSession()}catch(error){alert(error.message)}});
+
+  async function refreshFiles() {
+    if(!state.sessionId)return; const data=await api(`/api/workspaces/${state.sessionId}/files`); renderFiles(data.files||[]);
+  }
+  $("refresh-files").addEventListener("click",refreshFiles);
+  function renderFiles(files) {
+    const root=$("file-tree");root.replaceChildren(); files.filter(f=>f.type==="file").forEach(file=>{
+      const depth=(file.path.match(/\//g)||[]).length; const button=document.createElement("button");button.className=`file-row ${file.path===state.openFile?"active":""}`;button.style.paddingLeft=`${7+depth*11}px`;button.title=file.path;button.innerHTML=`<span class="file-icon">${file.name.toLowerCase().endsWith(".pdf")?"▣":"◇"}</span><span>${escapeHtml(file.name)}</span>`;button.onclick=()=>openWorkspaceFile(file.path);root.append(button)
+    }); if(!files.length)root.innerHTML='<div class="empty">Empty folder</div>';
+  }
+  async function openWorkspaceFile(path) {
+    try {const file=await api(`/api/workspaces/${state.sessionId}/file?path=${encodeURIComponent(path)}`);state.openFile=path;$("editor-path").textContent=path;$("editor-content").value=file.content;$("editor-content").classList.remove("hidden");$("editor-empty").classList.add("hidden");$("save-file").disabled=false;await refreshFiles()}
+    catch(error){alert(error.message)}
+  }
+  $("save-file").addEventListener("click",async()=>{if(!state.openFile)return;try{await api(`/api/workspaces/${state.sessionId}/file`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({path:state.openFile,content:$("editor-content").value})});$("save-file").textContent="Saved";setTimeout(()=>$("save-file").textContent="Save",900);await refreshFiles()}catch(error){alert(error.message)}});
+  $("upload-workspace-file").addEventListener("click",()=>$("workspace-file").click());
+  $("workspace-file").addEventListener("change",async()=>{for(const file of $("workspace-file").files){const form=new FormData();form.append("file",file);try{await api(`/api/workspaces/${state.sessionId}/files`,{method:"POST",body:form})}catch(error){alert(`${file.name}: ${error.message}`)}}$("workspace-file").value="";await refreshFiles()});
+
+  initialize();
+</script>
+</body>
+</html>
