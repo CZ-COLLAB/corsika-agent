@@ -4,7 +4,7 @@ This document is written for **AI Agents that need to deploy this project on a n
 server or personal computer**. It spells out "where, what to install, what to configure,
 how to verify, and common failures" in full. Please follow it in order and do not skip
 the verification steps. What you are installing is a **pure CORSIKA 7 research Agent**:
-opencode + three CORSIKA prompt documents + a web chat interface.
+opencode + four CORSIKA prompt documents + a web chat interface.
 
 ---
 
@@ -12,14 +12,14 @@ opencode + three CORSIKA prompt documents + a web chat interface.
 
 | Component | Role | Notes |
 |------|------|------|
-| `prompts/corsika7/` | The three prompt documents | The Agent's only CORSIKA domain knowledge; copied into the workspace `.opencode/skills/corsika7/` per session |
+| `prompts/corsika7/` | The four prompt documents | The Agent's only CORSIKA domain knowledge; copied into the workspace `.opencode/skills/corsika7/` per session |
 | `src/corsika_agent/` | Python web backend | Manages sessions and workspace files; starts the Agent with `opencode run --pure` |
 | `web/index.html` | Frontend | Chat + file tree + editor, nothing else |
 | opencode | Agent runtime | Must already be installed, version ≥ 1.x |
 
 This project **does not bundle** CORSIKA tool code (it does not render cards, parse DAT,
 or run simulations). The Agent compiles, runs, and analyzes CORSIKA inside the workspace
-itself, guided entirely by the three prompt documents.
+itself, guided entirely by the four prompt documents.
 
 ---
 
@@ -112,7 +112,7 @@ curl -s -X POST http://127.0.0.1:8765/api/workspaces \
 
 # ③ Check that the prompts made it into the workspace
 ls workspaces/studio/chats/*/workspace/.opencode/skills/corsika7/
-# Expected: SKILL.md and references/{usage-guide.md,code-architecture.md} are all there
+# Expected: SKILL.md and references/{usage-guide.md,code-architecture.md,planetary-migration.md} are all there
 
 # ④ Send a message and wait for the Agent to reply (small task, e.g. "read
 #    usage-guide.md and summarize how to write a steering card for a 1-proton shower")

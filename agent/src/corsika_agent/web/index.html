@@ -220,7 +220,7 @@
       $("runtime-label").textContent=runtime.available ? `OpenCode ${runtime.version||"ready"}` : "OpenCode not installed";
       const modelSelect=$("new-model"); modelSelect.replaceChildren();
       Object.entries(workspaces.models||status.model_backends||{}).forEach(([id,label])=>opt(modelSelect,id,label));
-      modelSelect.value="deepseek-v4-flash";
+      modelSelect.value="deepseek-flash";
       renderSessionList();
       if (state.sessions.length) openSession(state.sessions[0].session_id);
     } catch (error) { $("runtime-label").textContent=error.message; }

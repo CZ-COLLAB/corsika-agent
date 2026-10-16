@@ -13,6 +13,6 @@ export MUON_WORKSPACE_ROOT
 
 echo "==> CORSIKA Agent"
 echo "    workspace : $MUON_WORKSPACE_ROOT"
-echo "    corsika   : ${MUON_CORSIKA7_ROOT:-not set (default /eos/home-z/zhuoch/corsika-78010)}"
+echo "    corsika   : ${MUON_CORSIKA7_ROOT:-not set (default ~/corsika-78010)}"
 echo "    api key   : $([ -n "${DEEPSEEK_API_KEY:-}" ] && echo configured || echo DEEPSEEK_API_KEY not set)"
 exec ./.venv/bin/corsika-agent

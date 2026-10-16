@@ -10,13 +10,14 @@ import os
 from typing import Dict
 
 STUDIO_MODELS: Dict[str, str] = {
-    "deepseek-v4-flash": "DeepSeek V4 Flash",
+    "deepseek-flash": "DeepSeek V4.1 Flash",
     "deepseek-v4-pro": "DeepSeek V4 Pro",
 }
 
 LEGACY_MODEL_ALIASES: Dict[str, str] = {
-    "qwen3.6-flash": "deepseek-v4-flash",
+    "qwen3.6-flash": "deepseek-flash",
     "qwen3.6-plus": "deepseek-v4-pro",
+    "deepseek-v4-flash": "deepseek-flash",
 }
 
 

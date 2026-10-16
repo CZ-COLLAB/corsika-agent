@@ -67,7 +67,7 @@ def index() -> FileResponse:
 @app.get("/api/status")
 def status() -> Dict[str, Any]:
     corsika_root = Path(
-        os.environ.get("MUON_CORSIKA7_ROOT", "/eos/home-z/zhuoch/corsika-78010")
+        os.environ.get("MUON_CORSIKA7_ROOT", os.path.expanduser("~/corsika-78010"))
     )
     return {
         "version": __version__,
@@ -95,7 +95,7 @@ def workspace_session_create(body: Dict[str, Any]) -> Dict[str, Any]:
         return create_session(
             ROOT,
             title=str(body.get("title") or "") or None,
-            model=str(body.get("model", "deepseek-v4-flash")),
+            model=str(body.get("model", "deepseek-flash")),
         )
     except Exception as exc:
         raise _error(exc) from exc

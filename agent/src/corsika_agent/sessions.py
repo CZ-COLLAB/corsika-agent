@@ -280,7 +280,7 @@ def create_session(
     root: Path,
     *,
     title: Optional[str] = None,
-    model: str = "deepseek-v4-flash",
+    model: str = "deepseek-flash",
 ) -> Dict[str, Any]:
     model = normalize_studio_model(model)
     if model not in STUDIO_MODELS:
@@ -518,7 +518,7 @@ def upload_file(
 # ---------------------------------------------------------------------------
 
 def _corsika_root() -> Path:
-    return Path(os.environ.get("MUON_CORSIKA7_ROOT", "/eos/home-z/zhuoch/corsika-78010"))
+    return Path(os.environ.get("MUON_CORSIKA7_ROOT", os.path.expanduser("~/corsika-78010")))
 
 
 def _opencode_environment(model: str, workspace: Path) -> Dict[str, str]:

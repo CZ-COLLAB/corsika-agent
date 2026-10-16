@@ -68,7 +68,7 @@ See `SETUP.md` for details (including the full deployment guide for AI Agents).
 |------|------|------|
 | `DEEPSEEK_API_KEY` | Model API key (required) | — |
 | `DEEPSEEK_BASE_URL` | API endpoint | `https://api.deepseek.com` |
-| `MUON_CORSIKA7_ROOT` | CORSIKA distribution directory | `/eos/home-z/zhuoch/corsika-78010` |
+| `MUON_CORSIKA7_ROOT` | CORSIKA distribution directory | `~/corsika-78010` |
 | `MUON_WORKSPACE_ROOT` | Session data root directory | Current directory |
 | `MUON_WEB_HOST` / `MUON_WEB_PORT` | Listen address/port | `127.0.0.1` / `8765` |
 | `MUON_WEB_ALLOW_REMOTE` | Allow remote listening (no auth; use with care) | Unset |
