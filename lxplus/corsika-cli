@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# CORSIKA Agent on lxplus — run opencode directly with the CERN AI Gateway (AIGW).
+#
+# Usage:
+#   corsika-cli <name>                    # interactive TUI in workspace <name>
+#   corsika-cli <name> "message ..."      # one-shot agent turn
+#   corsika-cli -m <model> <name> [...]   # override model for this run
+#   corsika-cli models                    # list models available to your key
+#   corsika-cli list                      # list existing workspaces
+#
+# Required environment (put in ~/.bashrc):
+#   export CERN_AI_API_KEY="..."          # https://aigw.cern.ch/ui/?page=api-keys
+#   export CERN_AI_MODEL="gpt-oss-120b"   # model id, see `corsika-cli models`
+#
+# Optional environment:
+#   CERN_AI_BASE_URL   (default https://aigw.cern.ch)
+#   CORSIKA_ROOT       (default /eos/user/z/zhuoch/corsika-78010)
+#   WORKSPACE_PARENT   (default /eos/user/<initial>/<user>/corsika-agent-workspaces)
+set -euo pipefail
+
+AGENT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PROMPTS_SRC="$AGENT_ROOT/agent/prompts/corsika7"
+AGENTS_MD_SRC="$AGENT_ROOT/lxplus/AGENTS.md"
+[ -f "$AGENTS_MD_SRC" ] || AGENTS_MD_SRC="$AGENT_ROOT/agent/AGENTS.md"
+
+BASE_URL="${CERN_AI_BASE_URL:-https://aigw.cern.ch}"
+CORSIKA_ROOT="${CORSIKA_ROOT:-/eos/user/z/zhuoch/corsika-78010}"
+MODEL="${CERN_AI_MODEL:-}"
+
+if [ "${1:-}" = "models" ]; then
+  [ -n "${CERN_AI_API_KEY:-}" ] || { echo "!! CERN_AI_API_KEY not set"; exit 1; }
+  curl -s --max-time 20 "$BASE_URL/v1/models" \
+    -H "Authorization: Bearer $CERN_AI_API_KEY" \
+    | python3 -c "import sys,json;[print(m['id']) for m in json.load(sys.stdin)['data']]"
+  exit 0
+fi
+if [ "${1:-}" = "list" ]; then
+  ls -1 "${WORKSPACE_PARENT:-}/"*/ 2>/dev/null || echo "(no workspaces yet)"
+  exit 0
+fi
+
+if [ "${1:-}" = "-m" ]; then
+  MODEL="$2"; shift 2
+fi
+NAME="${1:-}"; shift || true
+if [ -z "$NAME" ]; then
+  sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'
+  exit 1
+fi
+
+if [ -z "${CERN_AI_API_KEY:-}" ]; then
+  echo "!! CERN_AI_API_KEY not set. Add to ~/.bashrc:"
+  echo '   export CERN_AI_API_KEY="..."   # from https://aigw.cern.ch/ui/?page=api-keys'
+  exit 1
+fi
+if [ -z "$MODEL" ]; then
+  echo "!! No model selected. Add to ~/.bashrc (pick one from \`$0 models\`):"
+  echo '   export CERN_AI_MODEL="gpt-oss-120b"'
+  exit 1
+fi
+if ! command -v opencode >/dev/null 2>&1; then
+  [ -x "$HOME/.opencode/bin/opencode" ] && export PATH="$HOME/.opencode/bin:$PATH"
+fi
+if ! command -v opencode >/dev/null 2>&1; then
+  echo "!! opencode not installed. Run: curl -fsSL https://opencode.ai/install | bash"
+  exit 1
+fi
+
+# Default workspace parent on EOS (simulations can produce GB-scale output; AFS quota is small)
+WORKSPACES="${WORKSPACE_PARENT:-/eos/user/${USER:0:1}/$USER/corsika-agent-workspaces}"
+WS="$WORKSPACES/$NAME"
+mkdir -p "$WS/.opencode/skills"
+cp -r "$PROMPTS_SRC" "$WS/.opencode/skills/"
+cp "$AGENTS_MD_SRC" "$WS/AGENTS.md"
+
+# FLUKA data shipped inside the CORSIKA distribution (needed by FLUKA-model runs)
+if [ -d "$CORSIKA_ROOT/fluka4-5.1/data" ]; then
+  export FLUPRO="$CORSIKA_ROOT/fluka4-5.1"
+  export FLUKADATA="$CORSIKA_ROOT/fluka4-5.1/data"
+fi
+
+export MUON_CORSIKA7_ROOT="$CORSIKA_ROOT"
+export MUON_WORKSPACE_ROOT="$WS"
+export CERNAI_API_KEY="$CERN_AI_API_KEY"
+export OPENCODE_DISABLE_AUTOUPDATE=true
+export OPENCODE_DISABLE_PRUNE=true
+export SHELL=/bin/bash
+
+export OPENCODE_CONFIG_CONTENT="$(python3 - "$WS" "$CORSIKA_ROOT" "$MODEL" "$BASE_URL" <<'EOF'
+import json, sys
+ws, corsika, model, base_url = sys.argv[1:5]
+print(json.dumps({
+    "$schema": "https://opencode.ai/config.json",
+    "model": f"cernai/{model}",
+    "instructions": [f"{ws}/AGENTS.md"],
+    "provider": {
+        "cernai": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "CERN AI Gateway",
+            "options": {
+                "baseURL": base_url,
+                "apiKey": "{env:CERNAI_API_KEY}",
+            },
+            "models": {model: {"name": model}},
+        }
+    },
+    "permission": {
+        "external_directory": {"*": "deny", f"{corsika}/**": "allow"},
+        "task": "allow",
+        "skill": "allow",
+        "edit": {"*": "allow", f"{corsika}/**": "allow"},
+        "bash": {
+            "*": "allow",
+            "singularity *": "deny", "/usr/bin/singularity *": "deny",
+            "sudo *": "deny", "su *": "deny",
+            "ssh *": "deny", "scp *": "deny",
+            "pip *": "deny", "pip3 *": "deny", "python* -m pip *": "deny",
+            "apt *": "deny", "apt-get *": "deny",
+        },
+    },
+}, ensure_ascii=False))
+EOF
+)"
+
+cd "$WS"
+
+if [ "$#" -eq 0 ]; then
+  echo "==> workspace : $WS"
+  echo "==> model     : $MODEL (CERN AI Gateway)"
+  echo "==> corsika   : $CORSIKA_ROOT"
+  echo "==> starting opencode TUI (type /exit or press Ctrl+C twice to quit)"
+  exec opencode
+else
+  exec opencode run --pure --model "cernai/$MODEL" --auto "$*"
+fi
