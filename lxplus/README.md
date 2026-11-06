@@ -18,9 +18,12 @@
 ```bash
 ssh lxplus.cern.ch
 curl -fsSL https://opencode.ai/install | bash
-# 退出并重新登录，使 ~/.opencode/bin 进入 PATH
-opencode --version   # 应显示 1.x
+source ~/.bashrc      # 让 ~/.opencode/bin 进入当前终端的 PATH
+opencode --version    # 应显示 1.x（若提示找不到命令，退出重登一次即可）
 ```
+
+> 不做 `source` 也行：`corsika-cli` 运行时会自动把 `~/.opencode/bin` 加入 PATH，
+> 这一步只是为了后面手动运行 `opencode` 命令时方便。
 
 ## 2. 配置 API key（一次性）
 
