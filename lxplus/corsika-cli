@@ -18,7 +18,8 @@
 #   WORKSPACE_PARENT   (default /eos/user/<initial>/<user>/corsika-agent-workspaces)
 set -euo pipefail
 
-AGENT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SELF="$(readlink -f "$0")"
+AGENT_ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
 PROMPTS_SRC="$AGENT_ROOT/agent/prompts/corsika7"
 AGENTS_MD_SRC="$AGENT_ROOT/lxplus/AGENTS.md"
 [ -f "$AGENTS_MD_SRC" ] || AGENTS_MD_SRC="$AGENT_ROOT/agent/AGENTS.md"
