@@ -46,4 +46,9 @@ if [ "$fail" = "0" ]; then
 else
   echo "==> Some checks failed — fix the MISSING items above."
 fi
-exit "$fail"
+# `exit` would close the caller's terminal when sourced; use `return` in that case.
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  exit "$fail"
+else
+  return "$fail"
+fi
