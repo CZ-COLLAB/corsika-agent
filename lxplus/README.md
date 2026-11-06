@@ -27,14 +27,14 @@ source corsika-agent/lxplus/setup.sh
 ## 4. 选择模型并冒烟测试
 
 corsika-agent models
-echo 'export CERN_AI_MODEL="模型名"' >> ~/.bashrc && source ~/.bashrc
+echo 'export CERN_AI_MODEL="gpt-oss-20b"' >> ~/.bashrc && source ~/.bashrc
 corsika-agent smoke "列出 run/ 下编译好的 CORSIKA 可执行文件，并说明各自的强子相互作用模型"
 
 ## 5. 日常使用
 
 corsika-agent my-shower                      # 交互式 TUI（/exit 退出）
 corsika-agent my-shower "任务描述"            # 一次性命令
-corsika-agent -m 模型名 my-shower "任务描述"   # 临时换模型
+corsika-agent -m gpt-oss-20b my-shower "任务描述"   # 临时换模型
 corsika-agent list                           # 工作区列表
 
 ## 6. 大统计量任务
