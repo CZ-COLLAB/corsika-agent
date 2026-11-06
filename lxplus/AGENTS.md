@@ -22,6 +22,12 @@ are in its `run/` directory (e.g. `corsika78010Linux_SIBYLL_urqmd`). You may rea
 run anything in that directory. Your own workspace is writable; treat the CORSIKA
 distribution as read-only unless writes are known to succeed — do not attempt to
 modify and rebuild the source there.
+If the `run/` directory is not writable (shared read-only installation), do NOT try
+to run simulations in it (CORSIKA writes its DAT output to the current directory).
+Instead create a run directory inside your workspace, copy the chosen executable
+plus the data files it needs (e.g. `tables.dat`, `atmabs.dat`, interaction-model
+cross-section/data tables such as the UrQMD/SIBYLL/DPMJET data files) into it, and
+run there. Verify with a 1-shower smoke test that the DAT file appears before scaling up.
 
 ## Environment notes (lxplus)
 
